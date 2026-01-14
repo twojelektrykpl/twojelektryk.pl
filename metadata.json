@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Twójelektryk.pl - System Obsługi Zleceń",
+  "description": "Zintegrowana platforma do zarządzania zleceniami serwisowymi, monitorowania czasu pracy oraz zgłaszania awarii przez klientów.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
