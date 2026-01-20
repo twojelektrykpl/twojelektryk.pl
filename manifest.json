@@ -1,0 +1,22 @@
+
+{
+  "short_name": "Twójelektryk",
+  "name": "Twójelektryk.pl - System Serwisowy",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/192/000000/electrical-sensor.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://img.icons8.com/color/512/000000/electrical-sensor.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#000000",
+  "display": "standalone",
+  "theme_color": "#A3E635",
+  "description": "Profesjonalne zarządzanie zleceniami elektrycznymi."
+}

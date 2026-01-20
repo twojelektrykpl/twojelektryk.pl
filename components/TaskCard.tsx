@@ -5,8 +5,15 @@ import { summarizeTask } from '../geminiService';
 
 interface Props {
   task: Task;
-  onUpdateStatus: (id: string, status: TaskStatus, time?: number, notes?: string) => void;
+  onUpdateStatus: (id: string, status: TaskStatus, time?: number, notes?: string, photo?: string, completedBy?: string) => void;
 }
+
+const WORKERS = [
+  "Piotr Rybicki",
+  "Rafał Mańkut",
+  "Tomasz Dubiela",
+  "Grzegorz Chrust"
+];
 
 const TaskCard: React.FC<Props> = ({ task, onUpdateStatus }) => {
   const [isSummarizing, setIsSummarizing] = useState(false);
@@ -14,6 +21,8 @@ const TaskCard: React.FC<Props> = ({ task, onUpdateStatus }) => {
   const [showCompletionForm, setShowCompletionForm] = useState(false);
   const [minutes, setMinutes] = useState(60);
   const [notes, setNotes] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [selectedWorker, setSelectedWorker] = useState(WORKERS[0]);
 
   const handleSummarize = async () => {
     setIsSummarizing(true);
@@ -22,144 +31,132 @@ const TaskCard: React.FC<Props> = ({ task, onUpdateStatus }) => {
     setIsSummarizing(false);
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPhoto(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmitCompletion = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateStatus(task.id, TaskStatus.COMPLETED, minutes, notes);
+    onUpdateStatus(task.id, TaskStatus.COMPLETED, minutes, notes, photo || undefined, selectedWorker);
     setShowCompletionForm(false);
   };
 
-  const getPriorityColor = (p: string) => {
-    switch (p) {
-      case 'high': return 'bg-red-500/10 text-red-500 border border-red-500/20';
-      case 'medium': return 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20';
-      default: return 'bg-zinc-800 text-zinc-400 border border-zinc-700';
-    }
-  };
-
-  const getStatusColor = (s: TaskStatus) => {
-    switch (s) {
-      case TaskStatus.PENDING: return 'bg-orange-500/10 text-orange-500';
-      case TaskStatus.IN_PROGRESS: return 'bg-lime-500/10 text-[#A3E635]';
-      case TaskStatus.COMPLETED: return 'bg-zinc-800 text-zinc-500';
-    }
+  const openInMaps = () => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.address)}`;
+    window.open(url, '_blank');
   };
 
   return (
-    <div className={`bg-zinc-900 rounded-3xl p-8 border border-zinc-800 shadow-2xl transition-all hover:border-zinc-700 ${task.status === TaskStatus.COMPLETED ? 'opacity-60 grayscale' : ''}`}>
+    <div className={`bg-zinc-900 rounded-[2rem] p-6 md:p-8 border border-zinc-800 shadow-2xl transition-all hover:border-zinc-700 ${task.status === TaskStatus.COMPLETED ? 'opacity-60' : ''}`}>
       <div className="flex justify-between items-start mb-6">
         <div className="flex-1">
-          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getPriorityColor(task.priority)}`}>
-            {task.priority === 'high' ? 'PRIORYTET' : task.priority === 'medium' ? 'ŚREDNI' : 'NISKI'}
-          </span>
-          <h3 className="mt-4 text-xl font-black text-white leading-tight">{task.title}</h3>
+          <div className="flex gap-2">
+            <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest ${task.priority === 'high' ? 'bg-red-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+              {task.priority}
+            </span>
+            <span className="text-zinc-600 text-[8px] font-bold uppercase tracking-widest">#{task.id.slice(-4)}</span>
+          </div>
+          <h3 className="mt-3 text-lg font-black text-white uppercase tracking-tight">{task.title}</h3>
         </div>
-        <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${getStatusColor(task.status)}`}>
-          {task.status}
-        </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <div className="flex items-center gap-3 text-sm text-zinc-400">
-          <div className="bg-zinc-800 p-2 rounded-lg">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-          </div>
-          <span className="font-bold">{task.clientName}</span>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-zinc-400">
-          <div className="bg-zinc-800 p-2 rounded-lg">
+      <div className="space-y-3 mb-6">
+        <button 
+          onClick={openInMaps}
+          className="flex items-center gap-3 w-full p-4 bg-black/40 rounded-2xl border border-zinc-800 hover:border-[#A3E635] transition-all group"
+        >
+          <div className="bg-zinc-800 p-2 rounded-lg group-hover:bg-[#A3E635]/20 group-hover:text-[#A3E635]">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           </div>
-          <span className="truncate">{task.address}</span>
-        </div>
+          <div className="text-left">
+            <p className="text-[10px] font-black text-zinc-600 uppercase">Lokalizacja (Kliknij by nawigować)</p>
+            <p className="text-xs text-zinc-300 font-bold">{task.address}</p>
+          </div>
+        </button>
       </div>
 
-      <div className="bg-black/50 p-5 rounded-2xl border border-zinc-800 mb-8">
-        <p className="text-zinc-300 text-sm leading-relaxed">
-          {task.description}
-        </p>
+      <div className="bg-black/20 p-4 rounded-2xl border border-zinc-800/50 mb-6">
+        <p className="text-zinc-400 text-xs leading-relaxed italic">"{task.description}"</p>
       </div>
 
       {summary && (
-        <div className="mb-8 p-5 bg-[#A3E635]/5 border border-[#A3E635]/20 rounded-2xl text-sm animate-fade-in">
-          <h4 className="font-black text-[#A3E635] text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13.536 14.95a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zM6.464 14.95l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414z" /></svg>
-            Analiza Systemu
-          </h4>
-          <div className="text-zinc-400 font-medium leading-relaxed">{summary}</div>
+        <div className="mb-6 p-4 bg-[#A3E635]/5 border border-[#A3E635]/10 rounded-2xl text-[11px] animate-fade-in text-zinc-300">
+          <h4 className="font-black text-[#A3E635] uppercase tracking-widest mb-2">Instrukcja Serwisowa AI</h4>
+          {summary}
         </div>
       )}
 
-      {task.status === TaskStatus.COMPLETED && (
-        <div className="mb-6 p-4 bg-zinc-800/50 rounded-2xl text-xs text-zinc-500 border border-zinc-800 font-bold uppercase tracking-widest flex justify-between">
-          <span>Wykonano: {task.timeSpentMinutes} min</span>
-          {task.workerNotes && <span>Notatki: obecne</span>}
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-4">
+      <div className="flex gap-2">
         {task.status === TaskStatus.PENDING && (
-          <button 
-            onClick={() => onUpdateStatus(task.id, TaskStatus.IN_PROGRESS)}
-            className="flex-1 bg-white text-black px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-all"
-          >
-            Podejmij zlecenie
-          </button>
+          <button onClick={() => onUpdateStatus(task.id, TaskStatus.IN_PROGRESS)} className="flex-1 bg-white text-black py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all">Podejmij pracę</button>
         )}
         {task.status === TaskStatus.IN_PROGRESS && (
-          <button 
-            onClick={() => setShowCompletionForm(true)}
-            className="flex-1 bg-[#A3E635] text-black px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-lime-300 shadow-xl shadow-lime-500/20 transition-all"
-          >
-            Zakończ prace
-          </button>
+          <button onClick={() => setShowCompletionForm(true)} className="flex-1 bg-[#A3E635] text-black py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-lime-300 shadow-xl shadow-lime-500/20 transition-all">Finalizacja</button>
         )}
         {!summary && task.status !== TaskStatus.COMPLETED && (
-          <button 
-            onClick={handleSummarize}
-            disabled={isSummarizing}
-            className="bg-zinc-800 border border-zinc-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-zinc-700 transition-all disabled:opacity-50"
-          >
-            {isSummarizing ? 'Analizowanie...' : 'Analiza AI'}
+          <button onClick={handleSummarize} disabled={isSummarizing} className="bg-zinc-800 text-white px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+            {isSummarizing ? '...' : 'AI'}
           </button>
         )}
       </div>
 
       {showCompletionForm && (
-        <div className="mt-8 border-t border-zinc-800 pt-8 animate-fade-in">
-          <form onSubmit={handleSubmitCompletion} className="space-y-6">
-            <div>
-              <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-3">Czas pracy (minuty)</label>
-              <input 
-                type="number" 
-                required 
-                value={minutes} 
-                onChange={(e) => setMinutes(parseInt(e.target.value))}
-                className="w-full p-4 bg-black border border-zinc-800 rounded-2xl focus:ring-2 focus:ring-[#A3E635] text-white outline-none"
-              />
+        <div className="mt-6 border-t border-zinc-800 pt-6 animate-fade-in space-y-6">
+          <div>
+            <label className="block text-[10px] font-black text-zinc-500 uppercase mb-2 tracking-widest">Osoba Wykonująca</label>
+            <select 
+              value={selectedWorker}
+              onChange={(e) => setSelectedWorker(e.target.value)}
+              className="w-full p-4 bg-black border border-zinc-800 rounded-2xl text-white outline-none text-sm appearance-none focus:border-[#A3E635] transition-all"
+            >
+              {WORKERS.map(w => (
+                <option key={w} value={w}>{w}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black text-zinc-500 uppercase mb-2 tracking-widest">Zdjęcie z realizacji</label>
+            <div className="relative group">
+              <input type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" id={`photo-${task.id}`} />
+              <label htmlFor={`photo-${task.id}`} className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-800 rounded-2xl cursor-pointer hover:border-[#A3E635] transition-all bg-black/40">
+                {photo ? (
+                  <img src={photo} alt="Podgląd" className="h-full w-full object-cover rounded-2xl" />
+                ) : (
+                  <div className="text-center">
+                    <svg className="w-8 h-8 text-zinc-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <span className="text-[10px] text-zinc-600 font-black uppercase">Zrób zdjęcie</span>
+                  </div>
+                )}
+              </label>
             </div>
-            <div>
-              <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-3">Opis działań</label>
-              <textarea 
-                value={notes} 
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Co dokładnie zostało zrobione?"
-                className="w-full p-4 bg-black border border-zinc-800 rounded-2xl focus:ring-2 focus:ring-[#A3E635] text-white outline-none min-h-[100px]"
-              />
-            </div>
-            <div className="flex gap-4">
-              <button 
-                type="submit" 
-                className="flex-1 bg-[#A3E635] text-black px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest"
-              >
-                Potwierdź Wykonanie
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setShowCompletionForm(false)}
-                className="bg-zinc-800 text-zinc-400 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest"
-              >
-                Cofnij
-              </button>
+          </div>
+
+          <form onSubmit={handleSubmitCompletion} className="space-y-4">
+             <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Czas pracy (minuty)</label>
+                <input 
+                  type="number" 
+                  placeholder="Minuty"
+                  value={minutes} 
+                  onChange={(e) => setMinutes(parseInt(e.target.value))}
+                  className="w-full p-4 bg-black border border-zinc-800 rounded-2xl text-white outline-none text-sm focus:border-[#A3E635]"
+                />
+             </div>
+            <textarea 
+              value={notes} 
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Krótki raport techniczny..."
+              className="w-full p-4 bg-black border border-zinc-800 rounded-2xl text-white outline-none min-h-[80px] text-sm focus:border-[#A3E635]"
+            />
+            <div className="flex gap-2">
+              <button type="submit" className="flex-1 bg-[#A3E635] text-black py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest font-black">Zakończ Zlecenie</button>
+              <button type="button" onClick={() => setShowCompletionForm(false)} className="bg-zinc-800 text-zinc-500 px-6 rounded-2xl text-[10px] font-black uppercase">X</button>
             </div>
           </form>
         </div>

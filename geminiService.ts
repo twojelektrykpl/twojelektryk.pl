@@ -1,9 +1,22 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+// Funkcja bezpiecznie pobierająca klucz (zapobiega crashowi w przeglądarce)
+const getApiKey = () => {
+  try {
+    // Sprawdza czy klucz jest wstrzyknięty, jeśli nie - używa wpisanego ręcznie
+    const envKey = (typeof process !== 'undefined' && process.env?.API_KEY);
+    return envKey || "TWÓJ_KLUCZ_GEMINI_TUTAJ"; 
+  } catch (e) {
+    return "TWÓJ_KLUCZ_GEMINI_TUTAJ";
+  }
+};
+
+const API_KEY = getApiKey();
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 export const summarizeTask = async (description: string) => {
+  if (API_KEY === "TWÓJ_KLUCZ_GEMINI_TUTAJ") return "Błąd: Skonfiguruj klucz API w geminiService.ts";
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -17,6 +30,7 @@ export const summarizeTask = async (description: string) => {
 };
 
 export const suggestWorkTime = async (title: string, description: string) => {
+  if (API_KEY === "TWÓJ_KLUCZ_GEMINI_TUTAJ") return 60;
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',

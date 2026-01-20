@@ -17,6 +17,8 @@ export interface Task {
   timeSpentMinutes?: number;
   workerNotes?: string;
   priority: 'low' | 'medium' | 'high';
+  photoAfter?: string; // base64
+  completedBy?: string; // New field for worker selection
 }
 
 export interface AppState {
